@@ -1,10 +1,37 @@
 const { Client, GatewayIntentBits } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
-const stringSimilarity = require('string-similarity');
 const { config } = require('dotenv');
+const jaroWinkler = require('jaro-winkler'); // Swap the import
 
 config();
+
+
+// Add this helper function anywhere above your parseSignupMessage function
+function getBestMatch(inputString, arrayToMatch) {
+  let bestMatch = { target: '', rating: 0 };
+  
+  for (const item of arrayToMatch) {
+    let rating = jaroWinkler(inputString, item);
+    
+    // --- THE FIX: Length Penalty ---
+    // Calculate how many characters different the two strings are
+    const lenDiff = Math.abs(inputString.length - item.length);
+    
+    // If the difference is more than 2 characters, penalize the score
+    // It subtracts 5% for every extra missing/added character past 2
+    if (lenDiff > 2) {
+      const penalty = (lenDiff - 2) * 0.05; 
+      rating = rating - penalty;
+    }
+
+    if (rating > bestMatch.rating) {
+      bestMatch = { target: item, rating };
+    }
+  }
+  return bestMatch;
+}
+
 
 // Configuration
 const TOKEN = process.env.BOT_TOKEN;
@@ -24,21 +51,24 @@ const ROLE_SPLITTERS = ['/', '|', ',', ' or '];
 
 // Fuzzy matching threshold (0 to 1). 0.8 means 80% similar.
 // Adjust this if it's too aggressive or too strict.
-const SIMILARITY_THRESHOLD = 0.8; 
+const SIMILARITY_THRESHOLD = 0.95; 
 
 const weaponAliases = {
   'perma': 'perma',
   'permafrost': 'perma',
   'fallen': 'fallen',
   'golem': 'golem',
+  'earthrune': 'golem',
   'ga': 'ga',
   'berock': 'bedrock',
   'bedrock': 'bedrock',
-  'polehummer': 'polehammer',
+  'pole hammer': 'polehammer',
   'polehammer': 'polehammer',
   'oathkeeper': 'oathkeeper',
   'great frost': 'great frost',
   'oth': 'oathkeeper',
+  'oath': 'oathkeeper',
+  'routbound': 'rootbound',
   'rootbound': 'rootbound',
   'incubus': 'incubus',
   'realm': 'realmbreaker',
@@ -47,9 +77,12 @@ const weaponAliases = {
   'spirithuner': 'spirithunter',
   'spiked': 'spiked',
   'rift': 'rift',
+  'glaive': 'rift',
   'downsong': 'dawnsong',
+  'dawsong': 'dawnsong',
   'dawensong': 'dawnsong',
   'dawnsong': 'dawnsong',
+  'h-fall': 'hallowfall',
   'hallowfall': 'hallowfall',
   'hallow': 'hallowfall',
   'blight': 'blight',
@@ -59,6 +92,7 @@ const weaponAliases = {
   'heavymace': 'heavy mace',
   'haevemace': 'heavy mace',
   'haveymace': 'heavy mace',
+  'b-paws': 'bear paws',
   'bear paws': 'bear paws',
   '1h mace': '1h mace',
   '1 hand mace': '1h mace',
@@ -66,23 +100,31 @@ const weaponAliases = {
   'lifecurse': 'lifecurse',
   'damnation': 'damnation',
   'damna': 'damnation',
-  'roatcaller': 'roatcaller',
+  'roatcaller': 'rotcaller',
+  'rotcaller': 'rotcaller',
+  'oucult': 'occult',
   'occult': 'occult',
   'ocult': 'occult',
   'hummer': 'hammer',
+  'g-hammer': 'great hammer',
+  'greathummer': 'great hammer',
   'great hammer': 'great hammer',
   '1h hammer': '1h hammer',
   'enigmatic': 'enigmatic',
   'engmatic': 'enigmatic',
+  'inigmatic': 'enigmatic',
   'bracers': 'bracers',
-  'battle bracer': 'bracers',
+  'battle bracers': 'bracers',
   'redemption': 'redemption',
   'longbow': 'longbow',
   'bloodletter': 'bloodletter',
   '1 hand arcane': '1h arcane',
   '1h arcane': '1h arcane',
+  '1harcane': '1h arcane',
   'great arcane': 'great arcane',
   'spirithunter': 'spirithunter',
+  'sprit': 'spirithunter',
+  'hfh': 'hellfire',
   'hillfire': 'hellfire',
   'hellfireheands': 'hellfire',
   'locus': 'locus',
@@ -90,19 +132,25 @@ const weaponAliases = {
   'loucus': 'locus',
   'icicle': 'icicle',
   'hoj': 'hoj',
-  'gril': 'grailseeker',
+  'hand of justice': 'hoj',
+  'grail': 'grailseeker',
   'grailseeker': 'grailseeker',
   'carving': 'carving',
   'wild': 'wild',
-  'heal': 'heal',
   'nature': 'nature',
   'holy': 'holy',
-  'infinity': 'infinity',
-  'infernal scyth': 'infernal scyth',
+  'infinity': 'infinity blade',
+  'infinity blade': 'infinity blade',
+  'infinity sword"': 'infinity blade',
+  'inf-blade': 'infinity blade',
+  'infernal scythe': 'infernal scythe',
+  'inf scythe': 'infernal scythe',
+  'enfrnal s': 'infernal scythe',
   'gala': 'galatine pairs',
   'galatine pair': 'galatine pairs',
   'galatine pairs': 'galatine pairs',
   'camlann': 'camlann',
+  'camlan mace': 'camlann',
   'staff of balance': 'staff of balance',
   'sob': 'staff of balance',
   'blackmonk': 'bms',
@@ -111,11 +159,36 @@ const weaponAliases = {
   'astral': 'astral',
   'hoarfrost': 'hoarfrost',
   'witchwork': 'witchwork',
+  'willing': 'wailing',
   'wailing': 'wailing',
-  'exalted': 'exalted'
+  'exalted': 'exalted',
+  'ursine': 'ursine',
+  'shaper': 'shaper',
+  'energy shaper': 'shaper',
+  'soulscythe': 'soulscythe',
+  'crystal hummer': 'truebolt hammer',
+  'truebolt hammer': 'truebolt hammer',
+  'sc': 'shadowcaller',
+  'shadowcaller': 'shadowcaller',
+  'forge hammers': 'forge hammers',
+  'bl': 'bloodletter',
+  'wildfire': 'wildfire',
+  'wild staff': 'wild staff',
+  'ww': 'witchwork',
+  'fang': 'demon fangs',
+  'cobra': 'cobra'
 };
 
 const weaponCategories = {
+  'cobra': 'Support',
+  'demon fangs': 'DPS',
+  'wild staff': 'Healer',
+  'wildfire': 'DPS',
+  'forge hammers': 'Tank',
+  'shadowcaller': 'Support',
+  'truebolt hammer': 'Tank',
+  'soulscythe': 'Tank',
+  'shaper': 'DPS',
   'perma': 'DPS',
   'golem': 'Tank',
   'ga': 'Support',
@@ -160,8 +233,8 @@ const weaponCategories = {
   'nature': 'Healer',
   'holy': 'Healer',
   'bear paws': 'DPS',
-  'infinity': 'DPS',
-  'infernal scyth': 'DPS',
+  'infinity blade': 'DPS',
+  'infernal scythe': 'DPS',
   'galatine pairs': 'DPS',
   'camlann': 'Tank',
   'staff of balance': 'Tank',
@@ -174,7 +247,8 @@ const weaponCategories = {
   'hoarfrost': 'Tank',
   'witchwork': 'DPS',
   'wailing': 'DPS',
-  'exalted': 'Healer'
+  'exalted': 'Healer',
+  'ursine': 'DPS'
 };
 
 const knownAliasKeys = Object.keys(weaponAliases);
@@ -220,7 +294,12 @@ function parseSignupMessage(content, unknownRolesSet) {
   let match;
 
   while ((match = regex.exec(content)) !== null) {
-    const rawRoleText = match[1].replace(/\([^)]*\)/g, '').trim().toLowerCase();
+    const rawRoleText = match[1]
+      .toLowerCase()
+      .replace(/\([^)]*\)/g, '')
+      .replace(/\d+\.\s*/g, '')
+      .replace(/royal|demon|knight|guardian|judi|armor|robe|jacket|offensive|defensive/g, '')
+      .trim();
     const userId = match[2];
 
     if (!rawRoleText) continue;
@@ -235,10 +314,10 @@ function parseSignupMessage(content, unknownRolesSet) {
             
       // If no direct match, attempt fuzzy matching for typos
       if (!normalized) {
-        const bestMatchInfo = stringSimilarity.findBestMatch(rawWeapon, knownAliasKeys);
-        if (bestMatchInfo.bestMatch.rating >= SIMILARITY_THRESHOLD) {
-          normalized = weaponAliases[bestMatchInfo.bestMatch.target];
-          console.log(`[Fuzzy Match] Mapped "${rawWeapon}" -> "${bestMatchInfo.bestMatch.target}" (${(bestMatchInfo.bestMatch.rating * 100).toFixed(1)}%)`);
+        const bestMatchInfo = getBestMatch(rawWeapon, knownAliasKeys);
+        if (bestMatchInfo.rating >= SIMILARITY_THRESHOLD) {
+          // console.log(`[Fuzzy Match] Mapped "${rawWeapon}" -> "${bestMatchInfo.target}" (${(bestMatchInfo.rating * 100).toFixed(1)}%)`);
+          normalized = weaponAliases[bestMatchInfo.target];
         } else {
           unknownRolesSet.add(rawWeapon);
           continue;
@@ -286,16 +365,22 @@ async function runProductionScan(client) {
 
       console.log(`\nScanning channel: ${channel.name || channelId}`);
             
-      const lastFetchedId = scanState[channelId];
+      let currentAfterId = scanState[channelId];
       let messagesProcessed = 0;
-      let latestMessageId = lastFetchedId;
+      let latestMessageId = currentAfterId;
+      let keepFetching = true;
 
-      const fetchOptions = { limit: 100 };
-      if (lastFetchedId) fetchOptions.after = lastFetchedId;
+      // Loop to fetch ALL messages after the saved state ID
+      while (keepFetching) {
+        const fetchOptions = { limit: 100 };
+        if (currentAfterId) fetchOptions.after = currentAfterId;
 
-      const messages = await channel.messages.fetch(fetchOptions);
-      
-      if (messages.size > 0) {
+        const messages = await channel.messages.fetch(fetchOptions);
+        
+        if (messages.size === 0) {
+          break; // Exit loop if no new messages are found
+        }
+
         const sortedMessages = Array.from(messages.values()).sort((a, b) => a.createdTimestamp - b.createdTimestamp);
         
         for (const msg of sortedMessages) {
@@ -330,17 +415,27 @@ async function runProductionScan(client) {
               pendingRoleAssignments[signup.userId].add(roleIdToAssign);
             }
           }
-          
-          latestMessageId = msg.id;
-          messagesProcessed++;
+        }
+        
+        // Update variables for the next pagination batch
+        currentAfterId = sortedMessages[sortedMessages.length - 1].id;
+        latestMessageId = currentAfterId;
+        messagesProcessed += messages.size;
+
+        console.log(`Fetched and processed batch of ${messages.size} messages...`);
+
+        // If Discord returns less than 100 messages, we've hit the newest message in the channel
+        if (messages.size < 100) {
+          keepFetching = false;
         }
       }
 
+      // Save the absolute newest message ID to state for the next cron run
       if (latestMessageId) {
         scanState[channelId] = latestMessageId;
       }
             
-      console.log(`Finished channel ${channelId}. Processed ${messagesProcessed} new messages.`);
+      console.log(`Finished channel ${channelId}. Processed a total of ${messagesProcessed} new messages.`);
 
     } catch (error) {
       console.error(`Error processing channel ${channelId}:`, error);
