@@ -32,10 +32,12 @@ const weaponAliases = {
   'fallen': 'fallen',
   'golem': 'golem',
   'ga': 'ga',
+  'berock': 'bedrock',
   'bedrock': 'bedrock',
   'polehummer': 'polehammer',
   'polehammer': 'polehammer',
   'oathkeeper': 'oathkeeper',
+  'great frost': 'great frost',
   'oth': 'oathkeeper',
   'rootbound': 'rootbound',
   'incubus': 'incubus',
@@ -45,12 +47,14 @@ const weaponAliases = {
   'spirithuner': 'spirithunter',
   'spiked': 'spiked',
   'rift': 'rift',
+  'downsong': 'dawnsong',
   'dawensong': 'dawnsong',
   'dawnsong': 'dawnsong',
   'hallowfall': 'hallowfall',
   'hallow': 'hallowfall',
   'blight': 'blight',
   'rampant': 'rampant',
+  'h-mace': 'heavy mace',
   'heavy mace': 'heavy mace',
   'heavymace': 'heavy mace',
   'haevemace': 'heavy mace',
@@ -95,13 +99,20 @@ const weaponAliases = {
   'holy': 'holy',
   'infinity': 'infinity',
   'infernal scyth': 'infernal scyth',
+  'gala': 'galatine pairs',
   'galatine pair': 'galatine pairs',
   'galatine pairs': 'galatine pairs',
   'camlann': 'camlann',
   'staff of balance': 'staff of balance',
   'sob': 'staff of balance',
   'blackmonk': 'bms',
-  'bms': 'bms'
+  'bms': 'bms',
+  'dreadstorm': 'dreadstorm',
+  'astral': 'astral',
+  'hoarfrost': 'hoarfrost',
+  'witchwork': 'witchwork',
+  'wailing': 'wailing',
+  'exalted': 'exalted'
 };
 
 const weaponCategories = {
@@ -154,7 +165,16 @@ const weaponCategories = {
   'galatine pairs': 'DPS',
   'camlann': 'Tank',
   'staff of balance': 'Tank',
-  'bms': 'Tank'
+  'bms': 'Tank',
+  'healer': 'Healer',
+  'dps': 'DPS',
+  'great frost': 'DPS',
+  'dreadstorm': 'Tank',
+  'astral': 'DPS',
+  'hoarfrost': 'Tank',
+  'witchwork': 'DPS',
+  'wailing': 'DPS',
+  'exalted': 'Healer'
 };
 
 const knownAliasKeys = Object.keys(weaponAliases);
