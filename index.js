@@ -59,7 +59,6 @@ const weaponAliases = {
   'fallen': 'fallen',
   'golem': 'golem',
   'earthrune': 'golem',
-  'ga': 'ga',
   'berock': 'bedrock',
   'bedrock': 'bedrock',
   'pole hammer': 'polehammer',
@@ -97,6 +96,8 @@ const weaponAliases = {
   '1h mace': '1h mace',
   '1 hand mace': '1h mace',
   'mace': '1h mace',
+  'life couse': 'lifecurse',
+  'life course': 'lifecurse',
   'lifecurse': 'lifecurse',
   'damnation': 'damnation',
   'damna': 'damnation',
@@ -105,6 +106,7 @@ const weaponAliases = {
   'oucult': 'occult',
   'occult': 'occult',
   'ocult': 'occult',
+  'hammer': 'hammer',
   'hummer': 'hammer',
   'g-hammer': 'great hammer',
   'greathummer': 'great hammer',
@@ -122,6 +124,7 @@ const weaponAliases = {
   '1h arcane': '1h arcane',
   '1harcane': '1h arcane',
   'great arcane': 'great arcane',
+  'ga': 'great arcane',
   'spirithunter': 'spirithunter',
   'sprit': 'spirithunter',
   'hfh': 'hellfire',
@@ -191,7 +194,6 @@ const weaponCategories = {
   'shaper': 'DPS',
   'perma': 'DPS',
   'golem': 'Tank',
-  'ga': 'Support',
   'bedrock': 'Support',
   'polehammer': 'Tank',
   'oathkeeper': 'Support',
@@ -299,7 +301,7 @@ function parseSignupMessage(content, unknownRolesSet) {
       .replace(/\([^)]*\)/g, '')
       .replace(/\[[^)]*\]/g, '')
       .replace(/\d+\.\s*/g, '')
-      .replace(/royal|demon|knight|guardian|judi|armor|robe|jacket|offensive|defensive/g, '')
+      .replace(/(royal|demon|knight|guardian|judi|armor|robe|jacket|offensive|defensive)\s*/g, '')
       .replace(/\s*[^/|,a-zA-Z\d\s-]\s*/g, ' ')
       .trim();
     const userId = match[2];
