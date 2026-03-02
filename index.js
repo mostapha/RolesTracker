@@ -300,7 +300,7 @@ function parseSignupMessage(content, unknownRolesSet) {
       .replace(/\[[^)]*\]/g, '')
       .replace(/\d+\.\s*/g, '')
       .replace(/royal|demon|knight|guardian|judi|armor|robe|jacket|offensive|defensive/g, '')
-      .replace(/\s*[^/|,a-zA-Z\d\s:-]\s*/g, ' ')
+      .replace(/\s*[^/|,a-zA-Z\d\s-]\s*/g, ' ')
       .trim();
     const userId = match[2];
 
